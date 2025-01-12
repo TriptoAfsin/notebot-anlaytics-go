@@ -28,7 +28,7 @@ func main() {
 	app := fiber.New()
 
 	// Init Route
-	route.RouteInit(app)
+	route.RouteInit(app, db.DB)
 
 	// Get port from environment variable or use default
 	port := os.Getenv("PORT")

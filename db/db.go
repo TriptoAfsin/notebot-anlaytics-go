@@ -9,6 +9,8 @@ import (
 	"gorm.io/gorm"
 )
 
+var DB *gorm.DB
+
 func InitDB() *gorm.DB {
 
 	dbHost := os.Getenv("DB_HOST")
@@ -28,5 +30,6 @@ func InitDB() *gorm.DB {
 		panic(fmt.Sprintf("🔴 Failed to connect database: %v", err))
 	}
 	log.Println("🟢 Connected to database")
+	DB = db
 	return db
 }

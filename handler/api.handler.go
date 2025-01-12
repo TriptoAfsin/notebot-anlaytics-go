@@ -1,8 +1,20 @@
 package handler
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"github.com/TriptoAfsin/notebot-anlaytics-go/config"
+	"github.com/TriptoAfsin/notebot-anlaytics-go/db"
+	"github.com/gofiber/fiber/v2"
+)
 
 func ApiHandler(c *fiber.Ctx) error {
+	db := db.DB
+	dbStatus := true
+
+	sqlDB, err := db.DB()
+	if err != nil || sqlDB.Ping() != nil {
+		dbStatus = false
+	}
+
 	apiStatus := fiber.Map{
 		"endPoints": []string{
 			"/",
@@ -12,8 +24,8 @@ func ApiHandler(c *fiber.Ctx) error {
 			"/games/notebird",
 			"/games/notedino",
 		},
-		"DB_Connection_Status": false,
-		"mode":                 "develop",
+		"db_connection": dbStatus,
+		"mode":          config.GetAppConfig().ENVIRONMENT,
 	}
 
 	return c.JSON(apiStatus)
