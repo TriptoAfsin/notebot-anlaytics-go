@@ -6,8 +6,10 @@ import (
 	"os"
 
 	"github.com/TriptoAfsin/notebot-anlaytics-go/db"
-	"github.com/TriptoAfsin/notebot-anlaytics-go/route"
+	"github.com/TriptoAfsin/notebot-anlaytics-go/routes"
+
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
 )
 
@@ -27,8 +29,15 @@ func main() {
 	// Init Fiber
 	app := fiber.New()
 
+	// Add CORS middleware
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+		AllowHeaders: "Origin, Content-Type, Accept",
+		AllowMethods: "GET, POST, PATCH, DELETE",
+	}))
+
 	// Init Route
-	route.RouteInit(app, db.DB)
+	routes.RouteInit(app, db.DB)
 
 	// Get port from environment variable or use default
 	port := os.Getenv("PORT")

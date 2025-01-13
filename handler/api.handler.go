@@ -36,9 +36,16 @@ func ApiHandler(c *fiber.Ctx) error {
 }
 
 func HealthCheckHandler(c *fiber.Ctx) error {
+	db := db.DB
+	dbStatus := true
+
+	sqlDB, err := db.DB()
+	if err != nil || sqlDB.Ping() != nil {
+		dbStatus = false
+	}
 	return c.JSON(fiber.Map{
 		"status": "OK",
-		"db":     false,
+		"db":     dbStatus,
 	})
 }
 

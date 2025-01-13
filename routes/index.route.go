@@ -1,4 +1,4 @@
-package route
+package routes
 
 import (
 	"github.com/TriptoAfsin/notebot-anlaytics-go/config"
