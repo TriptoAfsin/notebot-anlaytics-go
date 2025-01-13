@@ -73,7 +73,7 @@ func GetAllUsers(db *gorm.DB) fiber.Handler {
 
 		// Get paginated users
 		var users []map[string]interface{}
-		if err := db.Raw("SELECT * FROM app_users LIMIT ? OFFSET ?", limit, offset).Scan(&users).Error; err != nil {
+		if err := db.Raw("SELECT * FROM app_users ORDER BY id DESC LIMIT ? OFFSET ?", limit, offset).Scan(&users).Error; err != nil {
 			log.Printf("🔴 Error while fetching all users: %v", err)
 			return c.Status(500).JSON(fiber.Map{"status": "🔴 Error while fetching all users"})
 		}
