@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/TriptoAfsin/notebot-anlaytics-go/config"
+	"github.com/TriptoAfsin/notebot-anlaytics-go/lib/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -23,20 +24,10 @@ type ErrorResponse struct {
 	Status       string                   `json:"status"`
 }
 
-// validateAdminKey checks if the admin key is valid
-func validateAdminKey(c *fiber.Ctx, appConfig config.AppConfig) error {
-	if adminKey := c.Query("adminKey"); adminKey != appConfig.ADMIN_AUTH_KEY {
-		return c.Status(401).JSON(fiber.Map{
-			"Error": "🔴 Unauthorized Access !",
-		})
-	}
-	return nil
-}
-
 // PostNewError handles creation of new error logs
 func PostNewError(db *gorm.DB, appConfig config.AppConfig) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		if err := validateAdminKey(c, appConfig); err != nil {
+		if err := utils.ValidateAdminKey(c, appConfig); err != nil {
 			return err
 		}
 
@@ -50,7 +41,7 @@ func PostNewError(db *gorm.DB, appConfig config.AppConfig) fiber.Handler {
 			return c.Status(400).JSON(fiber.Map{"status": "🔴 Bad Request"})
 		}
 
-		if !validateEmail(errorLog.Email) {
+		if !utils.ValidateEmail(errorLog.Email) {
 			return c.Status(400).JSON(fiber.Map{"status": "🔴 Bad Request, Invalid Email"})
 		}
 
@@ -80,7 +71,7 @@ func PostNewError(db *gorm.DB, appConfig config.AppConfig) fiber.Handler {
 // GetErrorLogs retrieves all error logs
 func GetErrorLogs(db *gorm.DB, appConfig config.AppConfig) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		if err := validateAdminKey(c, appConfig); err != nil {
+		if err := utils.ValidateAdminKey(c, appConfig); err != nil {
 			return err
 		}
 
@@ -99,7 +90,7 @@ func GetErrorLogs(db *gorm.DB, appConfig config.AppConfig) fiber.Handler {
 // GetErrorsByEmail retrieves error logs for a specific email
 func GetErrorsByEmail(db *gorm.DB, appConfig config.AppConfig) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		if err := validateAdminKey(c, appConfig); err != nil {
+		if err := utils.ValidateAdminKey(c, appConfig); err != nil {
 			return err
 		}
 

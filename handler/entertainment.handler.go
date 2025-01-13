@@ -1,9 +1,8 @@
 package handler
 
 import (
-	"regexp"
-
 	"github.com/TriptoAfsin/notebot-anlaytics-go/config"
+	"github.com/TriptoAfsin/notebot-anlaytics-go/lib/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -14,13 +13,6 @@ type GameScore struct {
 	Score    int    `json:"score"`
 	Email    string `json:"email"`
 	UserName string `json:"user_name"`
-}
-
-// validateEmail checks if the email is valid
-// validateEmail uses regex to validate email format
-func validateEmail(email string) bool {
-	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
-	return emailRegex.MatchString(email)
 }
 
 // PostNoteBirdScore handles posting scores for NoteBird game
@@ -49,7 +41,7 @@ func PostNoteBirdScore(db *gorm.DB) fiber.Handler {
 		}
 
 		// Validate email
-		if !validateEmail(score.Email) {
+		if !utils.ValidateEmail(score.Email) {
 			return c.Status(400).JSON(fiber.Map{
 				"status": "🔴 Bad Request, Invalid Email",
 			})
@@ -114,7 +106,7 @@ func PostNoteDinoScore(db *gorm.DB) fiber.Handler {
 		}
 
 		// Validate email
-		if !validateEmail(score.Email) {
+		if !utils.ValidateEmail(score.Email) {
 			return c.Status(400).JSON(fiber.Map{
 				"status": "🔴 Bad Request, Invalid Email",
 			})
