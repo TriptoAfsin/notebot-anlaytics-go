@@ -81,15 +81,14 @@ func CreateMissedWord(db *gorm.DB) fiber.Handler {
 			})
 		}
 
-		// Using UPSERT to either insert new word or increment count
+		// Simple insert query without count column
 		query := `
-			INSERT INTO missed_words_table (word, count) 
-			VALUES (?, 1) 
-			ON DUPLICATE KEY UPDATE count = count + 1
+			INSERT INTO missed_words_table (missed_words) 
+			VALUES (?)
 		`
 
 		if err := db.Exec(query, word.Word).Error; err != nil {
-			log.Printf("🔴 Error while updating missed word count: %v", err)
+			log.Printf("🔴 Error while inserting missed word: %v", err)
 			return c.Status(500).JSON(fiber.Map{
 				"status": config.AppMessages.MissedWord.OperationUnsuccessful,
 			})
