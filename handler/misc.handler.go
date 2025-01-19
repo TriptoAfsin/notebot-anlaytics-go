@@ -3,6 +3,7 @@ package handler
 import (
 	"log"
 
+	"github.com/TriptoAfsin/notebot-anlaytics-go/config"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
@@ -14,6 +15,7 @@ type MissedWord struct {
 
 // GetMissedWords handles fetching all missed words with pagination
 func GetMissedWords(db *gorm.DB) fiber.Handler {
+	log.Println("🟢 GET: GetMissedWords handler called")
 	return func(c *fiber.Ctx) error {
 		// Get pagination parameters with defaults
 		page := c.QueryInt("page", 1)
@@ -36,7 +38,7 @@ func GetMissedWords(db *gorm.DB) fiber.Handler {
 		if err := db.Raw("SELECT COUNT(*) FROM missed_words_table").Scan(&total).Error; err != nil {
 			log.Printf("🔴 Error while counting missed words: %v", err)
 			return c.Status(500).JSON(fiber.Map{
-				"status": "🔴 Error while fetching missed words",
+				"status": config.AppMessages.MissedWord.FetchError,
 			})
 		}
 
@@ -49,7 +51,7 @@ func GetMissedWords(db *gorm.DB) fiber.Handler {
 		if err := db.Raw(query, limit, offset).Scan(&missedWords).Error; err != nil {
 			log.Printf("🔴 Error while fetching missed words: %v", err)
 			return c.Status(500).JSON(fiber.Map{
-				"status": "🔴 Error while fetching missed words",
+				"status": config.AppMessages.MissedWord.FetchError,
 			})
 		}
 
@@ -67,6 +69,7 @@ func GetMissedWords(db *gorm.DB) fiber.Handler {
 
 // CreateMissedWord handles creating or updating missed word entries
 func CreateMissedWord(db *gorm.DB) fiber.Handler {
+	log.Println("🔵 POST: CreateMissedWord handler called")
 	return func(c *fiber.Ctx) error {
 		word := struct {
 			Word string `json:"word"`
@@ -74,7 +77,7 @@ func CreateMissedWord(db *gorm.DB) fiber.Handler {
 
 		if err := c.BodyParser(&word); err != nil {
 			return c.Status(400).JSON(fiber.Map{
-				"status": "🔴 Bad Request",
+				"status": config.AppMessages.MissedWord.BadRequest,
 			})
 		}
 
@@ -88,13 +91,13 @@ func CreateMissedWord(db *gorm.DB) fiber.Handler {
 		if err := db.Exec(query, word.Word).Error; err != nil {
 			log.Printf("🔴 Error while updating missed word count: %v", err)
 			return c.Status(500).JSON(fiber.Map{
-				"status": "🔴 Operation was unsuccessful!",
+				"status": config.AppMessages.MissedWord.OperationUnsuccessful,
 			})
 		}
 
 		return c.Status(200).JSON(fiber.Map{
 			"word":   word.Word,
-			"status": "🟢 Word insertion was successful",
+			"status": config.AppMessages.MissedWord.InsertSuccess,
 		})
 	}
 }

@@ -15,6 +15,7 @@ func RouteInit(app *fiber.App, db *gorm.DB) {
 
 	// Daily report routes
 	app.Get("/daily_report", handler.GetDailyReport(db))
+	app.Get("/daily_report/summary", handler.GetDailyReportSummary(db))
 	app.Post("/daily_report", handler.PostDailyReport(db))
 
 	// NoteBird game routes

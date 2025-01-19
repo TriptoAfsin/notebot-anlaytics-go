@@ -19,22 +19,22 @@ type User struct {
 
 // CreateUser handles creating new users
 func CreateUser(db *gorm.DB) fiber.Handler {
+	log.Println("🔵 POST: CreateUser handler called")
 	return func(c *fiber.Ctx) error {
-		// Admin auth check
 		if c.Query("adminKey") != config.GetAppConfig().ADMIN_AUTH_KEY {
 			return c.Status(401).JSON(fiber.Map{
-				"error": "🔴 Unauthorized Access !",
+				"error": config.AppMessages.User.UnauthorizedAccess,
 			})
 		}
 
 		user := new(User)
 		if err := c.BodyParser(user); err != nil {
-			return c.Status(400).JSON(fiber.Map{"status": "🔴 Bad Request"})
+			return c.Status(400).JSON(fiber.Map{"status": config.AppMessages.User.BadRequest})
 		}
 
 		// Validate required fields
 		if user.Email == "" || user.UniID == "" || user.Batch == "" || user.Dept == "" || user.Role == "" {
-			return c.Status(400).JSON(fiber.Map{"status": "🔴 Bad Request"})
+			return c.Status(400).JSON(fiber.Map{"status": config.AppMessages.User.BadRequest})
 		}
 
 		// Set default image URL if not provided
@@ -46,18 +46,19 @@ func CreateUser(db *gorm.DB) fiber.Handler {
 		query := `INSERT INTO app_users (email, uni_id, batch, dept, role, img_url) VALUES (?, ?, ?, ?, ?, ?)`
 		if err := db.Exec(query, user.Email, user.UniID, user.Batch, user.Dept, user.Role, user.ImgUrl).Error; err != nil {
 			log.Printf("🔴 Error while inserting new user info: %v", err)
-			return c.Status(500).JSON(fiber.Map{"status": "🔴 Operation was unsuccessful!"})
+			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.User.OperationUnsuccessful})
 		}
 
 		return c.Status(200).JSON(fiber.Map{
 			"user":   user,
-			"status": "🟢 New user info insertion was successful",
+			"status": config.AppMessages.User.InsertSuccess,
 		})
 	}
 }
 
 // GetAllUsers handles fetching all users
 func GetAllUsers(db *gorm.DB) fiber.Handler {
+	log.Println("🟢 GET: GetAllUsers handler called")
 	return func(c *fiber.Ctx) error {
 		// Get pagination parameters from query
 		page := c.QueryInt("page", 1)
@@ -68,14 +69,14 @@ func GetAllUsers(db *gorm.DB) fiber.Handler {
 		var total int64
 		if err := db.Raw("SELECT COUNT(*) FROM app_users").Scan(&total).Error; err != nil {
 			log.Printf("🔴 Error while counting users: %v", err)
-			return c.Status(500).JSON(fiber.Map{"status": "🔴 Error while counting users"})
+			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.User.CountError})
 		}
 
 		// Get paginated users
 		var users []map[string]interface{}
 		if err := db.Raw("SELECT * FROM app_users ORDER BY id DESC LIMIT ? OFFSET ?", limit, offset).Scan(&users).Error; err != nil {
 			log.Printf("🔴 Error while fetching all users: %v", err)
-			return c.Status(500).JSON(fiber.Map{"status": "🔴 Error while fetching all users"})
+			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.User.FetchError})
 		}
 
 		return c.Status(200).JSON(fiber.Map{
@@ -90,6 +91,7 @@ func GetAllUsers(db *gorm.DB) fiber.Handler {
 
 // GetUserCount handles fetching user count
 func GetUserCount(db *gorm.DB) fiber.Handler {
+	log.Println("🟢 GET: GetUserCount handler called")
 	return func(c *fiber.Ctx) error {
 		var count int64
 		if err := db.Raw("SELECT COUNT(*) FROM app_users").Scan(&count).Error; err != nil {
@@ -103,6 +105,7 @@ func GetUserCount(db *gorm.DB) fiber.Handler {
 
 // GetUsersByEmail handles fetching users by email
 func GetUsersByEmail(db *gorm.DB) fiber.Handler {
+	log.Println("🟢 GET: GetUsersByEmail handler called")
 	return func(c *fiber.Ctx) error {
 		if c.Query("adminKey") != config.GetAppConfig().ADMIN_AUTH_KEY {
 			return c.Status(401).JSON(fiber.Map{"error": "🔴 Unauthorized Access !"})
@@ -128,6 +131,7 @@ func GetUsersByEmail(db *gorm.DB) fiber.Handler {
 
 // GetUsersByDeptAndBatch handles fetching users by department and batch
 func GetUsersByDeptAndBatch(db *gorm.DB) fiber.Handler {
+	log.Println("🟢 GET: GetUsersByDeptAndBatch handler called")
 	return func(c *fiber.Ctx) error {
 		if c.Query("adminKey") != config.GetAppConfig().ADMIN_AUTH_KEY {
 			return c.Status(401).JSON(fiber.Map{"error": "🔴 Unauthorized Access !"})
@@ -155,6 +159,7 @@ func GetUsersByDeptAndBatch(db *gorm.DB) fiber.Handler {
 
 // IncrementUserCount handles incrementing user count
 func IncrementUserCount(db *gorm.DB) fiber.Handler {
+	log.Println("🔵 POST: IncrementUserCount handler called")
 	return func(c *fiber.Ctx) error {
 		if err := db.Exec("UPDATE user_count SET count = count + 1").Error; err != nil {
 			log.Printf("🔴 Error while incrementing user count: %v", err)

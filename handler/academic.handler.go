@@ -10,11 +10,12 @@ import (
 
 // GetTopNoteSubjects handles fetching top 5 note subjects
 func GetTopNoteSubjects(db *gorm.DB) fiber.Handler {
+	log.Println("🟢 GetTopNoteSubjects handler called")
 	return func(c *fiber.Ctx) error {
 		var results []map[string]interface{}
 		if err := db.Raw("SELECT * FROM subnamedb ORDER BY count DESC LIMIT 5").Scan(&results).Error; err != nil {
 			log.Printf("🔴 Error while retrieving top note subjects: %v", err)
-			return c.Status(500).JSON(fiber.Map{"status": "🔴 Operation was unsuccessful!"})
+			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.Academic.OperationUnsuccessful})
 		}
 
 		return c.Status(200).JSON(fiber.Map{
@@ -25,11 +26,12 @@ func GetTopNoteSubjects(db *gorm.DB) fiber.Handler {
 
 // GetLabSubjects handles fetching all lab subjects
 func GetLabSubjects(db *gorm.DB) fiber.Handler {
+	log.Println("🟢 GetLabSubjects handler called")
 	return func(c *fiber.Ctx) error {
 		var results []map[string]interface{}
 		if err := db.Raw("SELECT * FROM labsdb").Scan(&results).Error; err != nil {
 			log.Printf("🔴 Error while retrieving lab subjects: %v", err)
-			return c.Status(500).JSON(fiber.Map{"status": "🔴 Operation was unsuccessful!"})
+			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.Academic.OperationUnsuccessful})
 		}
 
 		return c.Status(200).JSON(fiber.Map{
@@ -40,11 +42,12 @@ func GetLabSubjects(db *gorm.DB) fiber.Handler {
 
 // GetTopLabSubjects handles fetching top 5 lab subjects
 func GetTopLabSubjects(db *gorm.DB) fiber.Handler {
+	log.Println("🟢 GetTopLabSubjects handler called")
 	return func(c *fiber.Ctx) error {
 		var results []map[string]interface{}
 		if err := db.Raw("SELECT * FROM labsdb ORDER BY count DESC LIMIT 5").Scan(&results).Error; err != nil {
 			log.Printf("🔴 Error while retrieving top lab subjects: %v", err)
-			return c.Status(500).JSON(fiber.Map{"status": "🔴 Operation was unsuccessful!"})
+			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.Academic.OperationUnsuccessful})
 		}
 
 		return c.Status(200).JSON(fiber.Map{
@@ -55,20 +58,21 @@ func GetTopLabSubjects(db *gorm.DB) fiber.Handler {
 
 // IncrementSubjectCount is a generic handler for incrementing subject counts
 func IncrementSubjectCount(db *gorm.DB, subject string) fiber.Handler {
+	log.Println("🟢 IncrementSubjectCount handler called with subject: ", subject)
 	return func(c *fiber.Ctx) error {
 		if c.Query("adminKey") != config.GetAppConfig().ADMIN_AUTH_KEY {
 			return c.Status(401).JSON(fiber.Map{
-				"error": "🔴 Unauthorized Access !",
+				"error": config.AppMessages.Academic.UnauthorizedAccess,
 			})
 		}
 
 		if err := db.Exec("UPDATE subnamedb SET count = count + 1 WHERE subject = ?", subject).Error; err != nil {
 			log.Printf("🔴 Error while updating count for %s: %v", subject, err)
-			return c.Status(500).JSON(fiber.Map{"status": "🔴 Operation was unsuccessful!"})
+			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.Academic.OperationUnsuccessful})
 		}
 
 		return c.Status(200).JSON(fiber.Map{
-			"status": "🟢 Operation was successful",
+			"status": config.AppMessages.Academic.OperationSuccessful,
 		})
 	}
 }
@@ -112,20 +116,21 @@ func NotesEcono(db *gorm.DB) fiber.Handler  { return IncrementSubjectCount(db, "
 
 // IncrementLabCount is a generic handler for incrementing lab counts
 func IncrementLabCount(db *gorm.DB, subject string) fiber.Handler {
+	log.Println("🟢 IncrementLabCount handler called with subject: ", subject)
 	return func(c *fiber.Ctx) error {
 		if c.Query("adminKey") != config.GetAppConfig().ADMIN_AUTH_KEY {
 			return c.Status(401).JSON(fiber.Map{
-				"error": "🔴 Unauthorized Access !",
+				"error": config.AppMessages.Academic.UnauthorizedAccess,
 			})
 		}
 
 		if err := db.Exec("UPDATE labsdb SET count = count + 1 WHERE subject = ?", subject).Error; err != nil {
 			log.Printf("🔴 Error while updating count for lab %s: %v", subject, err)
-			return c.Status(500).JSON(fiber.Map{"status": "🔴 Operation was unsuccessful!"})
+			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.Academic.OperationUnsuccessful})
 		}
 
 		return c.Status(200).JSON(fiber.Map{
-			"status": "🟢 Operation was successful",
+			"status": config.AppMessages.Academic.OperationSuccessful,
 		})
 	}
 }
