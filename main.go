@@ -16,12 +16,12 @@ import (
 const DEFAULT_PORT = "10000"
 
 func main() {
-	log.Println("⏳ Loading .env file...")
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("🔴 Error loading .env file: %s", err)
+	// Try to load .env file, but don't fail if it doesn't exist
+	if err := godotenv.Load(); err != nil {
+		log.Println("⚠️ No .env file found. Using environment variables...")
+	} else {
+		log.Println("🟢 .env file loaded")
 	}
-	log.Println("🟢 .env file loaded")
 
 	// Init DB
 	db.InitDB()
