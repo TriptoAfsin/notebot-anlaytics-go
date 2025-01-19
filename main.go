@@ -17,7 +17,7 @@ const DEFAULT_PORT = "3000"
 
 func main() {
 	log.Println("⏳ Loading .env file...")
-	err := godotenv.Load(".env")
+	err := godotenv.Load()
 	if err != nil {
 		log.Fatalf("🔴 Error loading .env file: %s", err)
 	}
