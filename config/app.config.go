@@ -13,12 +13,26 @@ type AppConfig struct {
 }
 
 func GetAppConfig() AppConfig {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Fatalf("🔴 Error loading .env file: %s", err)
+	// Load .env file only in non-production environments
+	if os.Getenv("ENVIRONMENT") != "production" {
+		if err := godotenv.Load(".env"); err != nil {
+			log.Printf("⚠️ Warning: Error loading .env file: %s", err)
+			// Continue execution, don't fatal
+		}
 	}
+
+	adminKey := os.Getenv("ADMIN_KEY")
+	if adminKey == "" {
+		log.Fatal("🔴 ADMIN_KEY environment variable is required")
+	}
+
+	env := os.Getenv("ENVIRONMENT")
+	if env == "" {
+		env = "development" // Set default environment
+	}
+
 	return AppConfig{
-		ADMIN_AUTH_KEY: os.Getenv("ADMIN_KEY"),
-		ENVIRONMENT:    os.Getenv("ENVIRONMENT"),
+		ADMIN_AUTH_KEY: adminKey,
+		ENVIRONMENT:    env,
 	}
 }
