@@ -66,7 +66,7 @@ func IncrementSubjectCount(db *gorm.DB, subject string) fiber.Handler {
 			})
 		}
 
-		if err := db.Exec("UPDATE subnamedb SET count = count + 1 WHERE subject = ?", subject).Error; err != nil {
+		if err := db.Exec("UPDATE subnamedb SET count = count + 1 WHERE sub_name = ?", subject).Error; err != nil {
 			log.Printf("🔴 Error while updating count for %s: %v", subject, err)
 			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.Academic.OperationUnsuccessful})
 		}
@@ -124,7 +124,7 @@ func IncrementLabCount(db *gorm.DB, subject string) fiber.Handler {
 			})
 		}
 
-		if err := db.Exec("UPDATE labsdb SET count = count + 1 WHERE subject = ?", subject).Error; err != nil {
+		if err := db.Exec("UPDATE labsdb SET count = count + 1 WHERE lab_name = ?", subject).Error; err != nil {
 			log.Printf("🔴 Error while updating count for lab %s: %v", subject, err)
 			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.Academic.OperationUnsuccessful})
 		}
