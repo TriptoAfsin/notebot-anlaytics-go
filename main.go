@@ -13,7 +13,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const DEFAULT_PORT = "3000"
+const DEFAULT_PORT = "10000"
 
 func main() {
 	log.Println("⏳ Loading .env file...")
