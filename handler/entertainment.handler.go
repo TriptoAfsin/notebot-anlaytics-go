@@ -69,17 +69,56 @@ func PostNoteBirdScore(db *gorm.DB) fiber.Handler {
 func GetNoteBirdHof(db *gorm.DB) fiber.Handler {
 	log.Println("🟢 GET: GetNoteBirdHof handler called")
 	return func(c *fiber.Ctx) error {
-		var results []GameScore
-		query := `SELECT date, score, email, user_name FROM game_hof ORDER BY score DESC LIMIT 10`
+		// Get pagination parameters from query
+		page := c.QueryInt("page", 1)
+		limit := c.QueryInt("limit", 100)
+		search := c.Query("search", "")
+		offset := (page - 1) * limit
 
-		if err := db.Raw(query).Scan(&results).Error; err != nil {
+		// Build the WHERE clause for search
+		whereClause := "1=1"
+		params := []interface{}{}
+
+		if search != "" {
+			whereClause = "(email LIKE ? OR user_name LIKE ?)"
+			searchPattern := "%" + search + "%"
+			params = append(params, searchPattern, searchPattern)
+		}
+
+		// Get total count with search filter
+		var total int64
+		countQuery := "SELECT COUNT(*) FROM game_hof WHERE " + whereClause
+		if err := db.Raw(countQuery, params...).Scan(&total).Error; err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status": config.AppMessages.Game.FetchError,
+			})
+		}
+
+		// Get paginated and filtered scores
+		var results []GameScore
+		query := `
+			SELECT date, score, email, user_name 
+			FROM game_hof 
+			WHERE ` + whereClause + `
+			ORDER BY score DESC 
+			LIMIT ? OFFSET ?`
+
+		// Add pagination parameters
+		params = append(params, limit, offset)
+
+		if err := db.Raw(query, params...).Scan(&results).Error; err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status": config.AppMessages.Game.FetchError,
 			})
 		}
 
 		return c.Status(200).JSON(fiber.Map{
-			"hof": results,
+			"hof":          results,
+			"total":        total,
+			"current_page": page,
+			"limit":        limit,
+			"total_pages":  (total + int64(limit) - 1) / int64(limit),
+			"search":       search,
 		})
 	}
 }
@@ -136,17 +175,56 @@ func PostNoteDinoScore(db *gorm.DB) fiber.Handler {
 func GetNoteDinoHof(db *gorm.DB) fiber.Handler {
 	log.Println("🟢 GET: GetNoteDinoHof handler called")
 	return func(c *fiber.Ctx) error {
-		var results []GameScore
-		query := `SELECT date, score, email, user_name FROM game_hof_noteDino ORDER BY score DESC LIMIT 10`
+		// Get pagination parameters from query
+		page := c.QueryInt("page", 1)
+		limit := c.QueryInt("limit", 100)
+		search := c.Query("search", "")
+		offset := (page - 1) * limit
 
-		if err := db.Raw(query).Scan(&results).Error; err != nil {
+		// Build the WHERE clause for search
+		whereClause := "1=1"
+		params := []interface{}{}
+
+		if search != "" {
+			whereClause = "(email LIKE ? OR user_name LIKE ?)"
+			searchPattern := "%" + search + "%"
+			params = append(params, searchPattern, searchPattern)
+		}
+
+		// Get total count with search filter
+		var total int64
+		countQuery := "SELECT COUNT(*) FROM game_hof_noteDino WHERE " + whereClause
+		if err := db.Raw(countQuery, params...).Scan(&total).Error; err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status": config.AppMessages.Game.FetchError,
+			})
+		}
+
+		// Get paginated and filtered scores
+		var results []GameScore
+		query := `
+			SELECT date, score, email, user_name 
+			FROM game_hof_noteDino 
+			WHERE ` + whereClause + `
+			ORDER BY score DESC 
+			LIMIT ? OFFSET ?`
+
+		// Add pagination parameters
+		params = append(params, limit, offset)
+
+		if err := db.Raw(query, params...).Scan(&results).Error; err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status": config.AppMessages.Game.FetchError,
 			})
 		}
 
 		return c.Status(200).JSON(fiber.Map{
-			"hof": results,
+			"hof":          results,
+			"total":        total,
+			"current_page": page,
+			"limit":        limit,
+			"total_pages":  (total + int64(limit) - 1) / int64(limit),
+			"search":       search,
 		})
 	}
 }
