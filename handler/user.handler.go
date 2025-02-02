@@ -63,22 +63,39 @@ func GetAllUsers(db *gorm.DB) fiber.Handler {
 		// Get pagination parameters from query
 		page := c.QueryInt("page", 1)
 		limit := c.QueryInt("limit", 500)
+		search := c.Query("search", "")
 		offset := (page - 1) * limit
 
-		// Get total count
+		// Build the WHERE clause for search
+		whereClause := "1=1"
+		params := []interface{}{}
+
+		if search != "" {
+			whereClause = "(email LIKE ? OR dept LIKE ?)"
+			searchPattern := "%" + search + "%"
+			params = append(params, searchPattern, searchPattern)
+		}
+
+		// Get total count with search filter
 		var total int64
-		if err := db.Raw("SELECT COUNT(*) FROM app_users").Scan(&total).Error; err != nil {
+		countQuery := "SELECT COUNT(*) FROM app_users WHERE " + whereClause
+		if err := db.Raw(countQuery, params...).Scan(&total).Error; err != nil {
 			log.Printf("🔴 Error while counting users: %v", err)
 			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.User.CountError})
 		}
 
-		// Get paginated users with explicit created_at sorting
+		// Get paginated and filtered users
 		var users []map[string]interface{}
-		if err := db.Raw(`
+		query := `
 			SELECT * FROM app_users 
+			WHERE ` + whereClause + `
 			ORDER BY id DESC 
-			LIMIT ? OFFSET ?`,
-			limit, offset).Scan(&users).Error; err != nil {
+			LIMIT ? OFFSET ?`
+
+		// Add pagination parameters
+		params = append(params, limit, offset)
+
+		if err := db.Raw(query, params...).Scan(&users).Error; err != nil {
 			log.Printf("🔴 Error while fetching all users: %v", err)
 			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.User.FetchError})
 		}
@@ -89,6 +106,7 @@ func GetAllUsers(db *gorm.DB) fiber.Handler {
 			"current_page": page,
 			"limit":        limit,
 			"total_pages":  (total + int64(limit) - 1) / int64(limit),
+			"search":       search,
 		})
 	}
 }
