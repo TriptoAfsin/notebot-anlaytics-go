@@ -20,6 +20,7 @@ func GetMissedWords(db *gorm.DB) fiber.Handler {
 		// Get pagination parameters with defaults
 		page := c.QueryInt("page", 1)
 		limit := c.QueryInt("limit", 500)
+		search := c.Query("search", "")
 
 		// Prevent negative values
 		if page < 1 {
@@ -31,24 +32,39 @@ func GetMissedWords(db *gorm.DB) fiber.Handler {
 
 		offset := (page - 1) * limit
 
+		// Build the WHERE clause for search
+		whereClause := "1=1"
+		params := []interface{}{}
+
+		if search != "" {
+			whereClause = "missed_words LIKE ?"
+			searchPattern := "%" + search + "%"
+			params = append(params, searchPattern)
+		}
+
 		var missedWords []map[string]interface{}
 		var total int64
 
-		// Get total count
-		if err := db.Raw("SELECT COUNT(*) FROM missed_words_table").Scan(&total).Error; err != nil {
+		// Get total count with search filter
+		countQuery := "SELECT COUNT(*) FROM missed_words_table WHERE " + whereClause
+		if err := db.Raw(countQuery, params...).Scan(&total).Error; err != nil {
 			log.Printf("🔴 Error while counting missed words: %v", err)
 			return c.Status(500).JSON(fiber.Map{
 				"status": config.AppMessages.MissedWord.FetchError,
 			})
 		}
 
-		// Get paginated results
+		// Get paginated and filtered results
 		query := `
 			SELECT * FROM missed_words_table 
+			WHERE ` + whereClause + `
 			ORDER BY id DESC 
 			LIMIT ? OFFSET ?
 		`
-		if err := db.Raw(query, limit, offset).Scan(&missedWords).Error; err != nil {
+		// Add pagination parameters
+		params = append(params, limit, offset)
+
+		if err := db.Raw(query, params...).Scan(&missedWords).Error; err != nil {
 			log.Printf("🔴 Error while fetching missed words: %v", err)
 			return c.Status(500).JSON(fiber.Map{
 				"status": config.AppMessages.MissedWord.FetchError,
@@ -62,6 +78,7 @@ func GetMissedWords(db *gorm.DB) fiber.Handler {
 				"limit":        limit,
 				"total":        total,
 				"total_pages":  (total + int64(limit) - 1) / int64(limit),
+				"search":       search,
 			},
 		})
 	}
