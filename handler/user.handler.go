@@ -71,7 +71,7 @@ func GetAllUsers(db *gorm.DB) fiber.Handler {
 		params := []interface{}{}
 
 		if search != "" {
-			whereClause = "(email LIKE ? OR dept LIKE ?)"
+			whereClause = "(LOWER(email) LIKE LOWER(?) OR LOWER(dept) LIKE LOWER(?))"
 			searchPattern := "%" + search + "%"
 			params = append(params, searchPattern, searchPattern)
 		}
@@ -142,7 +142,7 @@ func GetUsersByEmail(db *gorm.DB) fiber.Handler {
 		}
 
 		var users []map[string]interface{}
-		if err := db.Raw("SELECT * FROM app_users WHERE email LIKE ?", email.Email).Scan(&users).Error; err != nil {
+		if err := db.Raw("SELECT * FROM app_users WHERE LOWER(email) LIKE LOWER(?)", email.Email).Scan(&users).Error; err != nil {
 			log.Printf("🔴 Error while fetching users by email: %v", err)
 			return c.Status(500).JSON(fiber.Map{"status": "🔴 Error while fetching app users"})
 		}
@@ -169,7 +169,7 @@ func GetUsersByDeptAndBatch(db *gorm.DB) fiber.Handler {
 		}
 
 		var users []map[string]interface{}
-		if err := db.Raw("SELECT * FROM app_users WHERE batch = ? AND dept LIKE ? ORDER BY batch DESC",
+		if err := db.Raw("SELECT * FROM app_users WHERE batch = ? AND LOWER(dept) LIKE LOWER(?) ORDER BY batch DESC",
 			filter.Batch, filter.Dept).Scan(&users).Error; err != nil {
 			log.Printf("🔴 Error while fetching filtered users: %v", err)
 			return c.Status(500).JSON(fiber.Map{"status": "🔴 Error while fetching app users"})

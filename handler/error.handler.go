@@ -119,7 +119,7 @@ func GetErrorsByEmail(db *gorm.DB, appConfig config.AppConfig) fiber.Handler {
 		}
 
 		var results []map[string]interface{}
-		if err := db.Raw("SELECT * FROM app_err_logs WHERE email LIKE ?", body.Email).
+		if err := db.Raw("SELECT * FROM app_err_logs WHERE LOWER(email) LIKE LOWER(?)", body.Email).
 			Scan(&results).Error; err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status": config.AppMessages.ErrorLog.EmailFetchError,
