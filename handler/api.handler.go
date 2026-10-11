@@ -145,7 +145,7 @@ func GetDailyReportSummary(db *gorm.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// Get total counts for each platform
 		//Each query uses COALESCE to handle null values
-		var totalAppCount, totalBotCount int64
+		var totalAppCount, totalBotCount, totalAiCount int64
 		if err := db.Raw("SELECT COALESCE(SUM(count), 0) FROM bot_daily_report WHERE platform = 'app'").Scan(&totalAppCount).Error; err != nil {
 			log.Printf("🔴 Error fetching app count: %v", err)
 			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.API.OperationUnsuccessful})
@@ -155,12 +155,18 @@ func GetDailyReportSummary(db *gorm.DB) fiber.Handler {
 			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.API.OperationUnsuccessful})
 		}
 
+		if err := db.Raw("SELECT COALESCE(SUM(count), 0) FROM bot_daily_report WHERE platform = 'ai'").Scan(&totalAiCount).Error; err != nil {
+			log.Printf("🔴 Error fetching ai count: %v", err)
+			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.API.OperationUnsuccessful})
+		}
+
 		// Calculate percentages
-		total := float64(totalAppCount + totalBotCount)
-		var appPercentage, botPercentage float64
+		total := float64(totalAppCount + totalBotCount + totalAiCount)
+		var appPercentage, botPercentage, aiPercentage float64
 		if total > 0 {
 			appPercentage = float64(totalAppCount) / total * 100
 			botPercentage = float64(totalBotCount) / total * 100
+			aiPercentage = float64(totalAiCount) / total * 100
 		}
 
 		// Get highest counts and dates
@@ -168,7 +174,7 @@ func GetDailyReportSummary(db *gorm.DB) fiber.Handler {
 			Count int64
 			Date  string
 		}
-		var highestApp, highestBot MaxCount
+		var highestApp, highestBot, highestAi MaxCount
 		var lowestDate, highestDate string
 		var lowestApiCount int64
 
@@ -193,6 +199,18 @@ func GetDailyReportSummary(db *gorm.DB) fiber.Handler {
 			LIMIT 1
 		`).Scan(&highestBot).Error; err != nil {
 			log.Printf("🔴 Error fetching highest bot count: %v", err)
+			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.API.OperationUnsuccessful})
+		}
+
+		// Get highest ai count (zero rows until the MCP servers start reporting)
+		if err := db.Raw(`
+			SELECT count, date
+			FROM bot_daily_report
+			WHERE platform = 'ai'
+			ORDER BY count DESC
+			LIMIT 1
+		`).Scan(&highestAi).Error; err != nil {
+			log.Printf("🔴 Error fetching highest ai count: %v", err)
 			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.API.OperationUnsuccessful})
 		}
 
@@ -240,10 +258,16 @@ func GetDailyReportSummary(db *gorm.DB) fiber.Handler {
 			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.API.OperationUnsuccessful})
 		}
 
-		// Determine highest platform
-		highestPlatform := "app"
-		if totalBotCount > totalAppCount {
-			highestPlatform = "bot"
+		// Determine highest and lowest platform across app, bot and ai
+		totals := map[string]int64{"app": totalAppCount, "bot": totalBotCount, "ai": totalAiCount}
+		highestPlatform, lowestPlatform := "app", "app"
+		for _, p := range []string{"bot", "ai"} {
+			if totals[p] > totals[highestPlatform] {
+				highestPlatform = p
+			}
+			if totals[p] < totals[lowestPlatform] {
+				lowestPlatform = p
+			}
 		}
 
 		return c.Status(200).JSON(fiber.Map{
@@ -253,10 +277,13 @@ func GetDailyReportSummary(db *gorm.DB) fiber.Handler {
 				"totalBotPlatformCount":   totalBotCount,
 				"appPlatformPercentage":   float64(int(appPercentage*100)) / 100, // Round to 2 decimal places
 				"botPlatformPercentage":   float64(int(botPercentage*100)) / 100, // Round to 2 decimal places
+				"totalAiPlatformCount":    totalAiCount,
+				"aiPlatformPercentage":    float64(int(aiPercentage*100)) / 100,
 				"highestPlatform":         highestPlatform,
-				"lowestPlatform":          map[string]string{"app": "bot", "bot": "app"}[highestPlatform],
+				"lowestPlatform":          lowestPlatform,
 				"highestAppPlatformCount": highestApp.Count,
 				"highestBotPlatformCount": highestBot.Count,
+				"highestAiPlatformCount":  highestAi.Count,
 				"highestApiCountDate":     highestDate,
 				"lowestApiCountDate":      lowestDate,
 				"lowestApiCount":          lowestApiCount,
@@ -286,7 +313,8 @@ func PostDailyReport(db *gorm.DB) fiber.Handler {
 		}
 
 		// Validate platform
-		validPlatforms := []string{"bot", "app"}
+		// "ai" = MCP servers (Claude, ChatGPT, …) consuming NoteBot content
+		validPlatforms := []string{"bot", "app", "ai"}
 		isValidPlatform := false
 		for _, p := range validPlatforms {
 			if p == report.Platform {

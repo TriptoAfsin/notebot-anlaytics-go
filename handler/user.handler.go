@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/TriptoAfsin/notebot-anlaytics-go/config"
+	"github.com/TriptoAfsin/notebot-anlaytics-go/lib/utils"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
@@ -60,6 +61,12 @@ func CreateUser(db *gorm.DB) fiber.Handler {
 func GetAllUsers(db *gorm.DB) fiber.Handler {
 	log.Println("🟢 GET: GetAllUsers handler called")
 	return func(c *fiber.Ctx) error {
+		// Every row is personal data (email, uni id, dept, batch). This endpoint
+		// used to be open to the internet.
+		if !utils.IsAdmin(c, config.GetAppConfig()) {
+			return c.Status(401).JSON(fiber.Map{"error": config.AppMessages.User.UnauthorizedAccess})
+		}
+
 		// Get pagination parameters from query
 		page := c.QueryInt("page", 1)
 		limit := c.QueryInt("limit", 500)

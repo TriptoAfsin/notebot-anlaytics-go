@@ -13,7 +13,7 @@ import (
 type GameScore struct {
 	Date     string `json:"date"`
 	Score    int    `json:"score"`
-	Email    string `json:"email"`
+	Email    string `json:"email,omitempty"`
 	UserName string `json:"user_name"`
 }
 
@@ -79,10 +79,18 @@ func GetNoteBirdHof(db *gorm.DB) fiber.Handler {
 		whereClause := "1=1"
 		params := []interface{}{}
 
+		// Emails are personal data: only the admin may see them or search by them.
+		// The app renders name + score and tolerates a missing email.
+		isAdmin := utils.IsAdmin(c, config.GetAppConfig())
 		if search != "" {
-			whereClause = "(email LIKE ? OR user_name LIKE ?)"
 			searchPattern := "%" + search + "%"
-			params = append(params, searchPattern, searchPattern)
+			if isAdmin {
+				whereClause = "(email LIKE ? OR user_name LIKE ?)"
+				params = append(params, searchPattern, searchPattern)
+			} else {
+				whereClause = "user_name LIKE ?"
+				params = append(params, searchPattern)
+			}
 		}
 
 		// Get total count with search filter
@@ -110,6 +118,12 @@ func GetNoteBirdHof(db *gorm.DB) fiber.Handler {
 			return c.Status(500).JSON(fiber.Map{
 				"status": config.AppMessages.Game.FetchError,
 			})
+		}
+
+		if !isAdmin {
+			for i := range results {
+				results[i].Email = ""
+			}
 		}
 
 		return c.Status(200).JSON(fiber.Map{
@@ -185,10 +199,18 @@ func GetNoteDinoHof(db *gorm.DB) fiber.Handler {
 		whereClause := "1=1"
 		params := []interface{}{}
 
+		// Emails are personal data: only the admin may see them or search by them.
+		// The app renders name + score and tolerates a missing email.
+		isAdmin := utils.IsAdmin(c, config.GetAppConfig())
 		if search != "" {
-			whereClause = "(email LIKE ? OR user_name LIKE ?)"
 			searchPattern := "%" + search + "%"
-			params = append(params, searchPattern, searchPattern)
+			if isAdmin {
+				whereClause = "(email LIKE ? OR user_name LIKE ?)"
+				params = append(params, searchPattern, searchPattern)
+			} else {
+				whereClause = "user_name LIKE ?"
+				params = append(params, searchPattern)
+			}
 		}
 
 		// Get total count with search filter
@@ -216,6 +238,12 @@ func GetNoteDinoHof(db *gorm.DB) fiber.Handler {
 			return c.Status(500).JSON(fiber.Map{
 				"status": config.AppMessages.Game.FetchError,
 			})
+		}
+
+		if !isAdmin {
+			for i := range results {
+				results[i].Email = ""
+			}
 		}
 
 		return c.Status(200).JSON(fiber.Map{

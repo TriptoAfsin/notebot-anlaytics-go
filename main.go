@@ -32,7 +32,7 @@ func main() {
 	// Add CORS middleware
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept",
+		AllowHeaders: "Origin, Content-Type, Accept, X-Admin-Key",
 		AllowMethods: "GET, POST, PATCH, DELETE",
 	}))
 
