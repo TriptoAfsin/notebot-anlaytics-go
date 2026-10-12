@@ -34,6 +34,9 @@ func RouteInit(app *fiber.App, db *gorm.DB) {
 	// User routes
 	app.Post("/user/new", handler.CreateUser(db))
 	app.Get("/users/app", handler.GetAllUsers(db))
+
+	// NoteBot MCP (ai.butexnotebot.com): emails, keys and requests. Admin only.
+	app.Get("/mcp/summary", handler.GetMcpSummary(db))
 	app.Post("/users/app/email", handler.GetUsersByEmail(db))
 	app.Post("/users/app/batch_dept", handler.GetUsersByDeptAndBatch(db))
 
