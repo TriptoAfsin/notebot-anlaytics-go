@@ -9,6 +9,9 @@ import (
 
 type AppConfig struct {
 	ADMIN_AUTH_KEY string
+	// DASHBOARD_PASS is the password typed into the analytics dashboard. It
+	// unlocks the same admin endpoints as ADMIN_KEY. Optional.
+	DASHBOARD_PASS string
 	ENVIRONMENT    string
 }
 
@@ -33,6 +36,7 @@ func GetAppConfig() AppConfig {
 
 	return AppConfig{
 		ADMIN_AUTH_KEY: adminKey,
+		DASHBOARD_PASS: os.Getenv("DASHBOARD_PASS"),
 		ENVIRONMENT:    env,
 	}
 }
