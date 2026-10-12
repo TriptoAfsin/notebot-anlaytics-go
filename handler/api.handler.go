@@ -159,6 +159,12 @@ func GetDailyReportSummary(db *gorm.DB) fiber.Handler {
 			log.Printf("🔴 Error fetching ai count: %v", err)
 			return c.Status(500).JSON(fiber.Map{"status": config.AppMessages.API.OperationUnsuccessful})
 		}
+		// The MCP server counts every request on every key since launch, while
+		// daily "ai" rows only exist once it reports usage. Use whichever is
+		// larger so AI shows up from day one.
+		if mcpTotal := mcpRequestTotal(db); mcpTotal > totalAiCount {
+			totalAiCount = mcpTotal
+		}
 
 		// Calculate percentages
 		total := float64(totalAppCount + totalBotCount + totalAiCount)

@@ -2,7 +2,6 @@ package handler
 
 import (
 	"log"
-	"os"
 	"strings"
 
 	"github.com/TriptoAfsin/notebot-anlaytics-go/config"
@@ -56,7 +55,7 @@ func GetMcpSummary(db *gorm.DB) fiber.Handler {
 		if !utils.IsAdmin(c, config.GetAppConfig()) {
 			return c.Status(401).JSON(fiber.Map{"error": config.AppMessages.User.UnauthorizedAccess})
 		}
-		if driver := strings.ToLower(os.Getenv("DB_DRIVER")); driver != "postgres" && driver != "postgresql" && driver != "pg" {
+		if !mcpAvailable() {
 			return c.Status(503).JSON(fiber.Map{"status": "MCP stats need DB_DRIVER=postgres"})
 		}
 
